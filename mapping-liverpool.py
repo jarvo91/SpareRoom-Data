@@ -1,9 +1,5 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-"""
-Created on Fri Dec 15 17:20:42 2017
-@author: pesa
-"""
 
 import pandas as pd
 import matplotlib.pyplot as plt
@@ -16,9 +12,9 @@ import seaborn as sns
 # =============================================================================
 
 # reading the JSON data using json.load()
-file = 'data/flatmates.json'
-file2 = 'data/rooms.json'
-with open(file) as flatmates_dict:
+file1 = 'data/flatmates.Liverpool.json'
+file2 = 'data/rooms.Liverpool.json'
+with open(file1) as flatmates_dict:
     flatmates_dict = json.load(flatmates_dict)
 with open(file2) as rooms_dict:
     rooms_dict = json.load(rooms_dict)
@@ -27,12 +23,12 @@ with open(file2) as rooms_dict:
 mates_df = pd.DataFrame.from_dict(flatmates_dict['listings'], orient='index')
 mates_areas_df = pd.DataFrame.from_dict(flatmates_dict['areas'], orient='index')
 mates_areas_df.columns = ['count']
-#mates_areas_df.head()
+# mates_areas_df.head()
 rooms_df = pd.DataFrame.from_dict(rooms_dict, orient='index')
 
 rental_price_change_df = pd.read_excel('data/rental_price_percentage_change_uk.xls', sheet_name=0, header=1)
-#rental_price_change_df.head()
-#print(rooms_df.head(5))
+# rental_price_change_df.head()
+# print(rooms_df.head(5))
 
 # pre-processing: we only care if the advert has picture or not
 def to_binary(x):
@@ -41,56 +37,58 @@ def to_binary(x):
         return 0
     else:
         return 1
+
+
 rooms_df.images = rooms_df.images.apply(to_binary)
 
 # Let's have a look numerically at what is inside our datasets
 print(rooms_df['price'].describe())
 
 # DATASET analysis
-print('No of rooms: ', len(rooms_df)) # no of rows
+print('No of rooms: ', len(rooms_df))  # no of rows
 for col in rooms_df.columns:
     print('{0} : {1}'.format(col, rooms_df[col].dtype) )
 print()
 print(rooms_df.describe())
-
 
 # =============================================================================
 # WordCloud Visualisation
 # =============================================================================
 
 # Quick WordCloud Visualisation based on areas
-# that people looking for in South East London are
+# that people looking for
 # selecting in their search
 
-mates_df['matching_search_areas']
+# mates_df['matching_search_areas']
 
-from wordcloud import WordCloud, STOPWORDS
+# from wordcloud import WordCloud, STOPWORDS
 
 # turn feature stored as a list into a separate dataframe with present elements
 # represented as differet columns with a boolean value to mark their presence
-search_areas_df = mates_df['matching_search_areas'].apply(lambda x: pd.Series(1,
-            index=x)).fillna(0).astype(bool)
+# search_areas_df = mates_df['matching_search_areas'].apply(lambda x: pd.Series(1,
+            # index=x)).fillna(0).astype(bool)
 
 # Generate a word cloud image
-word_cloud = WordCloud(width = 600, height=400,
-                      background_color='white',
-                      colormap='copper',
-                      max_words=100,
-                      stopwords=STOPWORDS,
-                      max_font_size=60,
-                      min_font_size=20,
-                      random_state=40).generate(search_areas_df.columns.str.cat(sep=' '))
+# word_cloud = WordCloud(width = 600, height=400,
+                      # background_color='white',
+                      # colormap='copper',
+                      # max_words=100,
+                      # stopwords=STOPWORDS,
+                      # max_font_size=60,
+                      # min_font_size=20,
+                      # random_state=40).generate(search_areas_df.columns.str.cat(sep=' '))
 
-word_cloud.words_
+# word_cloud.words_
 
-plt.figure(figsize=(5, 4), dpi=100)
-plt.imshow(word_cloud, interpolation='bicubic')
-plt.axis("off")
+# plt.figure(figsize=(5, 4), dpi=100)
+# plt.imshow(word_cloud, interpolation='bicubic')
+# plt.axis("off")
 
 
 # =============================================================================
 # Time-Series / Line-Graph on Rental Price change
 # =============================================================================
+
 
 from matplotlib.figure import SubplotParams as SPP
 
@@ -99,13 +97,15 @@ spp = SPP(left=None, bottom=None, right=0.7,
 
 fig, ax = plt.subplots(figsize=(12,6), subplotpars=spp)
 
-ax = rental_price_change_df['London'].plot(ax=ax)
-ax = rental_price_change_df['England'].plot(ax=ax, linestyle='--')
+ax = rental_price_change_df['North West'].plot(ax=ax)
+ax = rental_price_change_df['North East'].plot(ax=ax, linestyle='--')
+ax = rental_price_change_df['England'].plot(ax=ax, linestyle=':')
 ax.grid()
 ax.set_yticks(np.arange(-5, 6, 0.5))
 # draw vertical line from (-5,0) to (150, 0)
 ax.plot([-5, 150], [0, 0], 'k-', linestyle='-')
-ax.set_title('Rental Prices % change over 12 months, Jan 2007 to Nov 2017')
+ax.set_title('Regeional Rental Price % Change \n Rolling 12 months: 2006-2018')
+ax.set_xlabel('------ Time -----> ')
 
 
 #handles, labels = ax.get_legend_handles_labels()
@@ -161,7 +161,7 @@ fig2.set_tight_layout(True) #avoid labels to be cut out of the image
 
 
 # =============================================================================
-# Histogram: Price Distribution with Mean Annotated
+# Histogram: Price Distribution with Mode Annotated
 # =============================================================================
 
 
@@ -169,23 +169,24 @@ print(rooms_df['price'].describe())
 
 fig3, ax3 = plt.subplots()
 
-# make one histogram bin = £50
-price_unit = 50
-bins = np.arange(rooms_df['price'].min(), rooms_df['price'].max() + 1, price_unit)
-
+# make one histogram bin = £25
+price_unit = 25
+bins = np.arange(rooms_df['price'].min(), rooms_df['price'].min() + 950, price_unit)
 prices = rooms_df['price']
-ax3.hist(prices, bins=bins)
-xlabels = np.arange(0, 3450, price_unit)
-ax3.set_xticks(xlabels)
-ax3.set_xticklabels(xlabels, rotation='vertical')
-ax3.set_yticks(np.arange(0, 500, 25))
-ax3.set_ylabel('Number of rooms')
-ax3.set_xlabel('Asking Price')
-ax3.set_title('Room Rental Price Distribution in SE London ( Source: SpareRoom.co.uk 15/12/2017)')
+max_price = rooms_df['price'].max()
 
 mode = int(prices.mode()) # annotate the most common renatal price
 ax3.annotate('mode: {m}'.format(m=mode), xy=(mode + 2, 6.5),xytext=(mode+3, 1.2),
-arrowprops=dict(facecolor='black', shrink=0.05))
+arrowprops=dict(facecolor='Red', shrink=0.1))
+
+ax3.hist(prices, bins=bins)
+xlabels = np.arange(0, 1000, price_unit)
+ax3.set_xticks(xlabels)
+ax3.set_xticklabels(xlabels, rotation='vertical')
+ax3.set_yticks(np.arange(0, 340, 10))
+ax3.set_ylabel('Number of rooms')
+ax3.set_xlabel('Asking Price')
+ax3.set_title('Room Rental Price Distribution')
 
 fig3.set_size_inches(14, 10)
 fig3.set_tight_layout(True) #avoid labels to be cut out of the image
@@ -199,8 +200,8 @@ fig3.set_tight_layout(True) #avoid labels to be cut out of the image
 #rooms_df.plot.scatter('price', 'latitude') # simple plot
 #sns.regplot(rooms_df['price'], rooms_df['latitude']) # with regression line
 
-sns.lmplot(x='price', y='latitude', data = rooms_df, fit_reg = True) # with regression line
-sns.lmplot(x='price', y='longitude', data = rooms_df, fit_reg = True) # with regression line
+#sns.lmplot(x='price', y='latitude', data = rooms_df, fit_reg = True) # with regression line
+#sns.lmplot(x='price', y='longitude', data = rooms_df, fit_reg = True) # with regression line
 
 
 # =============================================================================
@@ -213,8 +214,8 @@ ppc = rooms_df['price'].groupby(rooms_df['postcode']).mean().sort_values()
 fig4, ax4 = plt.subplots()
 
 ax4 = ppc.plot.barh(rot=0)
-ax4.set_xticks(np.arange(0, 950, 50))
-ax4.set_title('Average Room Price per Postcode in SE London (Source: SpareRoom.co.uk 15/12/2017)')
+ax4.set_xticks(np.arange(0, 600, 25))
+ax4.set_title('Average Room Price per Postcode')
 ax4.set_ylabel('Postcode')
 ax4.set_xlabel('Average Price')
 
@@ -245,14 +246,13 @@ print(ppe.apply(pd.Series.mode))
 fig5, ax5 = plt.subplots(1,2)
 
 ax5[0].bar(['Unfurnished', 'Furnished'], ppf.median(), color=['darkred', 'darkblue'])
-ax5[0].set_yticks(np.arange(0, 950, 50))
-ax5[0].set_title('Room Price Furnished / Unfurnished')
-ax5[0].set_ylabel('Median Price across SE London')
-
+ax5[0].set_yticks(np.arange(0, 600, 25))
+ax5[0].set_title('Avg Room Price Furnished / Unfurnished')
+ax5[0].set_ylabel('Median Price')
 
 ax5[1].bar(['Without Ensuite', 'With Ensuite'], ppe.median(), color=['darkred', 'darkblue'])
-ax5[1].set_yticks(np.arange(0, 950, 50))
-ax5[1].set_title('Room Price with / without Ensuite')
+ax5[1].set_yticks(np.arange(0, 600, 25))
+ax5[1].set_title('Avg Room Price with / without Ensuite')
 ax5[1].set_xlabel("")
 
 fig5.set_size_inches(8, 8)
@@ -273,7 +273,7 @@ ax6.spines['bottom'].set_color('#1a1a1a')
 
 boxplot = sns.boxplot(x=rooms_df.price, y=rooms_df.bills_included, orient='h')
 
-plt.title('Prices of Rooms if bills are included', fontsize=30)
+plt.title('Prices Range of Rooms if bills are included', fontsize=28)
 plt.ylabel('Bills included?', fontsize=22)
 plt.xlabel('Price', fontsize=22)
 
@@ -284,6 +284,7 @@ boxplot.set(yticklabels=['No', 'Yes']);
 # Heat-Map on Geographical Area
 # =============================================================================
 
+import matplotlib as mpl
 import matplotlib.cm
 sns.set(style="white", color_codes=True)
 from mpl_toolkits.basemap import Basemap
@@ -315,8 +316,8 @@ m = Basemap(resolution = 'l', # c (crude), l, i, h, f (full) or None
             projection = 'merc', # see: http://matplotlib.org/basemap/users/mapsetup.html
             # westlimit=-0.134854; southlimit=51.359999; eastlimit=0.196795; northlimit=51.53308
             lat_0 = 51.42, lon_0 = 0.03, # centre point of your map
-            llcrnrlon = -0.14, llcrnrlat = 51.36,#lower left corner
-            urcrnrlon = 0.2, urcrnrlat = 51.53) #uper right corner
+            llcrnrlon = -0.14, llcrnrlat = 51.36, # lower left corner
+            urcrnrlon = 0.2, urcrnrlat = 51.53) # upper right corner
 m.drawmapboundary(fill_color = '#46bcec')
 m.fillcontinents(color = '#f2f2f2', lake_color = '#46bcec')
 m.drawcoastlines()
@@ -359,26 +360,28 @@ class MyBasemap(Basemap):
                                     area.latitude+lat_correct), s=area[col_id],
                                     fontsize='small', weight='bold')
 
-# Draw basic empty map:
-m2 = MyBasemap(resolution = 'i', # c (crude), l, i, h, f (full) or None
-            projection = 'merc', # see: http://matplotlib.org/basemap/users/mapsetup.html
-            # westlimit=-3.070616; southlimit=53.354529; eastlimit=-2.82742; northlimit=53.462588
-            lat_0 = 53.40856, lon_0 = -2.94904, # centre point of your map
-            llcrnrlon = -3.07, llcrnrlat = 53.35,# lower left corner
-            urcrnrlon = -2.82, urcrnrlat = 53.47, ax=ax7) # upper right corner
 
-m2.drawmapboundary(fill_color = '#46bcec')
-m2.fillcontinents(color = '#f2f2f2', lake_color = '#46bcec')
+# Draw basic empty map:
+m2 = MyBasemap(resolution='i',  # c (crude), l, i, h, f (full) or None
+            projection='merc',  # see: http://matplotlib.org/basemap/users/mapsetup.html
+            # westlimit=-3.134183; southlimit=53.320448; eastlimit=-2.801389; northlimit=53.515493
+            lat_0=53.4179705, lon_0=-2.94904,  # centre point of your map
+            llcrnrlon = -3.13, llcrnrlat = 53.32,  # lower left corner
+            urcrnrlon = -2.80, urcrnrlat = 53.52, ax=ax7)  # upper right corner
+
+m2.drawmapboundary(fill_color='#46bcec')
+m2.fillcontinents(color='#f2f2f2', lake_color='#46bcec')
 m2.drawcoastlines()
 
 m2.printlabels('data/postcode-outcodes.csv', lon_correct=-0.01)
+
 
 def plot_area(in_df, in_map):
     count = in_df['count']
     x, y = in_map(in_df.longitude, in_df.latitude)
     size = (count/1000) ** 2 * 2 + 3
-    in_map.plot(x, y, 'o', markersize = size,
-                color = '#dd4422', alpha=0.8)
+    in_map.plot(x, y, 'o', markersize=size,
+                color='#dd4422', alpha=0.8)
 
 # Uncomment the below line to visualise the
 # bubble plot
@@ -392,15 +395,15 @@ m2.readshapefile('data/uk_areas_svg/Districts', 'postcodes')
 m2.postcodes_info
 
 # USE DATA TO COLOUR MAP:
-df_poly = pd.DataFrame( {
-            'shapes' : [Polygon(np.array(shape), True) for shape in m2.postcodes],
-            'postcode' : [area['name'] for area in m2.postcodes_info]})
+df_poly = pd.DataFrame({
+            'shapes': [Polygon(np.array(shape), True) for shape in m2.postcodes],
+            'postcode': [area['name'] for area in m2.postcodes_info]})
 df_poly = df_poly.merge(mates_areas_df, on='postcode', how='left')
 df_poly = df_poly[~df_poly['count'].isin([np.NaN])]
 df_poly.head()
 
 # Color map ideas: http://matplotlib.org/examples/color/colormaps_reference.html
-cmap = plt.get_cmap('Oranges')
+cmap = plt.get_cmap('YlOrRd')
 pc = PatchCollection(df_poly.shapes, zorder=2)
 # The ‘zorder’ argument just makes sure that the patches that we are creating
 #   end up on top of the map, not underneath it.
@@ -410,8 +413,8 @@ pc.set_facecolor(cmap(norm(df_poly['count'].fillna(0).values)))
 ax7.add_collection(pc)
 
 #  Add a colorbar, this makes it at lot easier to
-#   interpret the colours of the map and relate them to a number.
-mapper = matplotlib.cm.ScalarMappable(norm = norm, cmap = cmap)
+#  interpret the colours of the map and relate them to a number.
+mapper = matplotlib.cm.ScalarMappable(norm=norm, cmap=cmap)
 mapper.set_array(df_poly['count'])
 plt.colorbar(mapper, shrink=0.4)
 plt.title('Room Demand as no of "room wanted" ads per postcode', fontsize=18)

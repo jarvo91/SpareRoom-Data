@@ -27,12 +27,12 @@ with open(file2) as rooms_dict:
 mates_df = pd.DataFrame.from_dict(flatmates_dict['listings'], orient='index')
 mates_areas_df = pd.DataFrame.from_dict(flatmates_dict['areas'], orient='index')
 mates_areas_df.columns = ['count']
-#mates_areas_df.head()
+# mates_areas_df.head()
 rooms_df = pd.DataFrame.from_dict(rooms_dict, orient='index')
 
 rental_price_change_df = pd.read_excel('data/rental_price_percentage_change_uk.xls', sheet_name=0, header=1)
-#rental_price_change_df.head()
-#print(rooms_df.head(5))
+# rental_price_change_df.head()
+# print(rooms_df.head(5))
 
 # pre-processing: we only care if the advert has picture or not
 def to_binary(x):
@@ -41,13 +41,15 @@ def to_binary(x):
         return 0
     else:
         return 1
+
+
 rooms_df.images = rooms_df.images.apply(to_binary)
 
 # Let's have a look numerically at what is inside our datasets
 print(rooms_df['price'].describe())
 
 # DATASET analysis
-print('No of rooms: ', len(rooms_df)) # no of rows
+print('No of rooms: ', len(rooms_df))  # no of rows
 for col in rooms_df.columns:
     print('{0} : {1}'.format(col, rooms_df[col].dtype) )
 print()
@@ -315,8 +317,8 @@ m = Basemap(resolution = 'l', # c (crude), l, i, h, f (full) or None
             projection = 'merc', # see: http://matplotlib.org/basemap/users/mapsetup.html
             # westlimit=-0.134854; southlimit=51.359999; eastlimit=0.196795; northlimit=51.53308
             lat_0 = 51.42, lon_0 = 0.03, # centre point of your map
-            llcrnrlon = -0.14, llcrnrlat = 51.36,#lower left corner
-            urcrnrlon = 0.2, urcrnrlat = 51.53) #uper right corner
+            llcrnrlon = -0.14, llcrnrlat = 51.36, # lower left corner
+            urcrnrlon = 0.2, urcrnrlat = 51.53) # upper right corner
 m.drawmapboundary(fill_color = '#46bcec')
 m.fillcontinents(color = '#f2f2f2', lake_color = '#46bcec')
 m.drawcoastlines()
@@ -373,12 +375,13 @@ m2.drawcoastlines()
 
 m2.printlabels('data/postcode-outcodes.csv', lon_correct=-0.01)
 
+
 def plot_area(in_df, in_map):
     count = in_df['count']
     x, y = in_map(in_df.longitude, in_df.latitude)
     size = (count/1000) ** 2 * 2 + 3
-    in_map.plot(x, y, 'o', markersize = size,
-                color = '#dd4422', alpha=0.8)
+    in_map.plot(x, y, 'o', markersize=size,
+                color='#dd4422', alpha=0.8)
 
 # Uncomment the below line to visualise the
 # bubble plot
@@ -392,9 +395,9 @@ m2.readshapefile('data/uk_areas_svg/Districts', 'postcodes')
 m2.postcodes_info
 
 # USE DATA TO COLOUR MAP:
-df_poly = pd.DataFrame( {
-            'shapes' : [Polygon(np.array(shape), True) for shape in m2.postcodes],
-            'postcode' : [area['name'] for area in m2.postcodes_info]})
+df_poly = pd.DataFrame({
+            'shapes': [Polygon(np.array(shape), True) for shape in m2.postcodes],
+            'postcode': [area['name'] for area in m2.postcodes_info]})
 df_poly = df_poly.merge(mates_areas_df, on='postcode', how='left')
 df_poly = df_poly[~df_poly['count'].isin([np.NaN])]
 df_poly.head()
@@ -410,8 +413,8 @@ pc.set_facecolor(cmap(norm(df_poly['count'].fillna(0).values)))
 ax7.add_collection(pc)
 
 #  Add a colorbar, this makes it at lot easier to
-#   interpret the colours of the map and relate them to a number.
-mapper = matplotlib.cm.ScalarMappable(norm = norm, cmap = cmap)
+#  interpret the colours of the map and relate them to a number.
+mapper = matplotlib.cm.ScalarMappable(norm=norm, cmap=cmap)
 mapper.set_array(df_poly['count'])
 plt.colorbar(mapper, shrink=0.4)
 plt.title('Room Demand as no of "room wanted" ads per postcode (SE London - SpareRoom.co.uk - 15/12/17)', fontsize=18)

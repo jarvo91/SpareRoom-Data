@@ -1,11 +1,10 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-
 # Zoopla api key = u3639q6jdfu5q6p3qhe6qyk8
 
 # pd.read_html() -> scrape html tables
 
-# from bs4 import BeautifulSoup
+from bs4 import BeautifulSoup
 import requests
 import json
 from datetime import datetime
@@ -39,8 +38,8 @@ listing_pointer = 'flatshare/flatshare_detail.pl?flatshare_id='
 # =============================================================================
 #E.g. of links that "break" into their non public API
 
-#https://iphoneapp.spareroom.co.uk/flatmates?format=json&page=1&max_per_page=100&where=se13
-#https://iphoneapp.spareroom.co.uk/flatmates?&format=json&page=1&max_per_page=100&where=se13
+#https://iphoneapp.spareroom.co.uk/flatmates?format=json&page=1&max_per_page=100&where=L1
+#https://iphoneapp.spareroom.co.uk/flatmates?&format=json&page=1&max_per_page=100&where=L1
 
 # =============================================================================
 
@@ -60,7 +59,7 @@ buddies_preferences = {
         'where': 'Liverpool',
         }
 
-max_pages = 1 # max number of pages to parse per area
+max_pages = 10 # max number of pages to parse per area
 
 '''
 call sequence:
@@ -93,8 +92,79 @@ def make_get_request(url=None, cookies=None, headers={'User-Agent': 'Mozilla/5.0
 
 
 # =============================================================================
-
 #   METHODS TO EXTRACT DATA ABOUT ROOMS & SORT IT INTO A DICTIONARY
+# =============================================================================
+
+def search_rooms_in(area, rooms={}):
+    global preferences
+    preferences['page'] = 1
+    preferences['where'] = area.lower() # str.lower() makes it lowercase
+
+    params = '&'.join(['{key}={value}'.format(
+            key=key, value=preferences[key]) for key in preferences])
+    url = '{location}/{endpoint}?{parameters}'.format(
+            location=api_location, endpoint=api_search_endpoint, parameters=params)
+
+    try:
+        sparerooms_reqs = make_get_request(url=url, cookies=cookies, headers=headers)
+        #print(sparerooms_reqs) # from this we realise that the text
+        #spat out by the above func. is really a json file, so...
+        results = json.loads(sparerooms_reqs)
+    except Exception as e:
+        print('Error Getting {area}: {message} (skipping...)'.format(area=area, message=e.message))
+        return rooms
+    if results['success'] == 0 :
+        print(area, ' is not a valid search area for Room Seekers: IGNORED')
+        return rooms
+    if int(results['count']) > 10000 : #if there are more than 10k results, there must be an error: exclude this area
+        print(area, ' is not returning valid search results for Room Listings: IGNORED')
+        return rooms
+
+    pages = int(results['pages']) if 'pages' in results else 0
+    count = int(results['count']) if 'count' in results else 0
+
+    if not rooms: # if the dictionary is empty, initialise it
+        rooms['listings'] = {}
+        rooms['areas'] = { area : count }
+
+    rooms['areas'] = {**rooms['areas'], **{area: count } }
+
+    for page in range(1, min(pages, max_pages)+1):
+        preferences['page'] = page
+
+        # prepare url for page request and query the website
+        params = '&'.join(['{key}={value}'.format(
+            key=key, value=preferences[key]) for key in preferences])
+        url = '{location}/{endpoint}?{params}'.format(
+            location=api_location, endpoint=api_search_endpoint, params=params)
+        sparerooms_reqs = make_get_request(url=url, cookies=cookies, headers=headers)
+        results = json.loads(sparerooms_reqs)
+        '''
+        # export raw spareroom page (json data)
+        with open('raw_spareroom.json', 'w') as f:
+            f.write(json.dumps(results, indent=2, sort_keys=True))
+        '''
+        for listing_data in results['results']: # iterate through listings
+            #print(room_data,'\n') # checkpoint
+            room_id = listing_data['advert_id']
+            if 'days_of_wk_available' in listing_data and \
+                listing_data['days_of_wk_available'] != '7 days a week':
+                    continue #only consider normal lets (7 days per week)
+            if 'ad_type' in listing_data and listing_data['ad_type'] != 'offered':
+                continue
+            rooms_no = len(listing_data['rooms']) if 'rooms' in listing_data else 0
+            for r in range(rooms_no):
+                room_info = filter_room_info(listing_data, r)
+                id_code = room_id + str(r).rjust(3, '0')
+                if id_code in rooms: # avoid duplicates
+                    continue
+                rooms[id_code] = {
+                                    **{'ad_id':room_id, 'room_num_within_ad':r, 'search':area},
+                                    **room_info
+                                 }
+    return rooms
+
+# =============================================================================
 
 def filter_room_info(room_details, room_number=0):
     #exctract relevant details from a room and put it into a dictionary
@@ -156,70 +226,6 @@ def filter_room_info(room_details, room_number=0):
             'rental_payments': payment_period
             }
     return room_info
-
-# =============================================================================
-
-def search_rooms_in(area):
-    global preferences
-    preferences['page'] = 1
-    preferences['where'] = area.lower() # str.lower() makes it lowercase
-
-    rooms = {}
-
-    params = '&'.join(['{key}={value}'.format(
-            key=key, value=preferences[key]) for key in preferences])
-    url = '{location}/{endpoint}?{parameters}'.format(
-            location=api_location, endpoint=api_search_endpoint, parameters=params)
-
-    try:
-        sparerooms_reqs = make_get_request(url=url, cookies=cookies, headers=headers)
-        #print(sparerooms_reqs) # from this we realise that the text
-                #spat out by the above func. is really a json file, so...
-        results = json.loads(sparerooms_reqs)
-    except Exception as e:
-        print('Error Getting {area}: {message} (skipping...)'.format(area=area, message=e.message))
-        return rooms
-    if results['success'] == 0 :
-        print(area, ' is not a valid search area for Room Seekers: IGNORED')
-        return rooms
-    if int(results['count']) > 10000 : #if there are more than 10k results, there must be an error: exclude this area
-        print(area, ' is not returning valid search results for Room Listings: IGNORED')
-        return rooms
-    pages = int(results['pages']) if 'pages' in results else 0
-
-    for page in range(1, min(pages, max_pages)+1):
-        preferences['page'] = page
-        params = '&'.join(
-                ['{key}={value}'.format(key=key, value=preferences[key]
-                ) for key in preferences])
-        url = '{location}/{endpoint}?{params}'.format(
-                location=api_location, endpoint=api_search_endpoint, params=params)
-        sparerooms_reqs = make_get_request(url=url, cookies=cookies, headers=headers)
-        results = json.loads(sparerooms_reqs)
-        '''
-        # export raw spareroom page (json data)
-        with open('raw_spareroom.json', 'w') as f:
-            f.write(json.dumps(results, indent=2, sort_keys=True))
-        '''
-        for listing_data in results['results']: # iterate through listings
-            #print(room_data,'\n') # checkpoint
-            room_id = listing_data['advert_id']
-            if 'days_of_wk_available' in listing_data and \
-                listing_data['days_of_wk_available'] != '7 days a week':
-                    continue #only consider normal lets (7 days per week)
-            if 'ad_type' in listing_data and listing_data['ad_type'] != 'offered':
-                continue
-            rooms_no = len(listing_data['rooms']) if 'rooms' in listing_data else 0
-            for r in range(rooms_no):
-                room_info = filter_room_info(listing_data, r)
-                id_code = room_id + str(r).rjust(3, '0')
-                if id_code in rooms: # avoid duplicates
-                    continue
-                rooms[id_code] = {
-                                    **{'ad_id':room_id, 'room_num_within_ad':r, 'search':area},
-                                    **room_info
-                                 }
-    return rooms
 
 # =============================================================================
 
@@ -290,17 +296,16 @@ def get_combined_seekers(area, seekers={}):
                                                     'example_matching_area' in flatmate_data else [area]
                                     }
     return seekers
-    #return flatmates_results {} #commented line returns everything
 
 # =============================================================================
 
 #   METHODS TO SAVE DATA EXTRACTED TO LOCAL JSON FILE
 
 # file to store the rooms in
-file_name = 'rooms.json'
+file_name = 'rooms.Liverpool.json'
 
 # file to store the people looking in
-file_name2 = 'flatmates.json'
+file_name2 = 'flatmates.Liverpool.json'
 
 def save_rooms(rooms):
     """Saves the found rooms in the defined file."""
@@ -340,7 +345,7 @@ def get_rooms(areas):
 
     for area in areas:
         rooms = {**rooms, **search_rooms_in(area)} # merge dictionaries
-        #print(rooms)
+        print(rooms)
         people_looking = get_combined_seekers(area, people_looking)
         '''
         temp_dict1, temp_dict2 = get_combined_seekers(area)
@@ -352,16 +357,13 @@ def get_rooms(areas):
 
 # =============================================================================
 
-str_areas = '''L1 L2 L3 L4 L5 L6 L7 L8 L9 L10 L11 L12 L13 L14 L15 L16 L17 L18
-            L19 L20 L21 L22 L23 L24 L25 L26 L27 L28 L29 L30 L31 L32 L33 L34 L35
-            L36 L37 L38 L39 L40 L67 L68 L69 L70 L71 L72 L73 L74 L75 L80 '''
+str_areas = 'L1 L2 L3 L4 L5 L6 L7 L8 L9 L10 L11 L12 L13 L14 L15 L16 L17 L18 L19 L20 L21 L22 L23 L24 L25 L26 L27 L28 L29 L30 L31 L32 L33 L34 L35 L36 L37 L38 L39 L40'
 areas = str_areas.split()
 
     # Liverpool  postcodes ->
                 #'''L1 L2 L3 L4 L5 L6 L7 L8 L9 L10 L11 L12 L13 L14 L15 L16 L17 L18
                 #L19 L20 L21 L22 L23 L24 L25 L26 L27 L28 L29 L30 L31 L32 L33 L34 L35
                 #L36 L37 L38 L39 L40 L67 L68 L69 L70 L71 L72 L73 L74 L75 L80'''
-    # - The area contains approximately 412,444 households with a population of about 988,126 (2011 census)
 
 
 
