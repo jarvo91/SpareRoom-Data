@@ -10,14 +10,18 @@ import seaborn as sns
 # =============================================================================
 # Load and Process Data
 # =============================================================================
+print('Loading...')
 
 # reading the JSON data using json.load()
 file1 = 'data/flatmates.Liverpool.json'
 file2 = 'data/rooms.Liverpool.json'
+file3 = 'data/roomsCount.Liverpool.json'
 with open(file1) as flatmates_dict:
     flatmates_dict = json.load(flatmates_dict)
 with open(file2) as rooms_dict:
     rooms_dict = json.load(rooms_dict)
+with open(file3) as roomsCount_dict:
+    roomsCount_dict = json.load(roomsCount_dict)
 
 # converting json dataset from dictionary to dataframe
 mates_df = pd.DataFrame.from_dict(flatmates_dict['listings'], orient='index')
@@ -25,6 +29,8 @@ mates_areas_df = pd.DataFrame.from_dict(flatmates_dict['areas'], orient='index')
 mates_areas_df.columns = ['count']
 # mates_areas_df.head()
 rooms_df = pd.DataFrame.from_dict(rooms_dict, orient='index')
+rooms_areas_df = pd.DataFrame.from_dict(roomsCount_dict['areas'], orient='index')
+rooms_areas_df.columns = ['count']
 
 rental_price_change_df = pd.read_excel('data/rental_price_percentage_change_uk.xls', sheet_name=0, header=1)
 # rental_price_change_df.head()
@@ -240,6 +246,7 @@ print(ppe.count())
 print(ppe.mean())
 print(ppe.median())
 print(ppe.apply(pd.Series.mode))
+print('Loading...')
 
 # Median: not skewed so much by very large or small values
 
@@ -281,7 +288,7 @@ boxplot.set(yticklabels=['No', 'Yes']);
 
 
 # =============================================================================
-# Heat-Map on Geographical Area
+# Heat-Map of Ads Per Postcode
 # =============================================================================
 
 import matplotlib as mpl
@@ -327,17 +334,21 @@ m.drawcoastlines()
 
 # WHERE ARE PEOPLE LOOKING FOR ROOMS?
 # If we want to plot where people are looking,
-#   we need to match their postcodes to an approximate lat. and long.
+#  we need to match their postcodes to an approximate lat. and long.
 # The following website contains a dataset to match outcodes with latitude and longitude:
 # https://www.freemaptools.com/download-uk-postcode-lat-lng.htm
 postcodes = pd.read_csv('data/postcode-outcodes.csv', index_col='id')
-postcodes = postcodes.loc[postcodes['postcode'].isin(mates_areas_df.index.values)]
+postcodes = postcodes.loc[postcodes['postcode'].isin(rooms_areas_df.index.values)]
 postcodes.head()
 
 # Merge dataframes using the postcode as a reference
-mates_areas_df['postcode'] = mates_areas_df.index.values
-mates_areas_df = mates_areas_df.merge(postcodes, on='postcode')
-mates_areas_df.head()
+rooms_areas_df['postcode'] = rooms_areas_df.index.values
+rooms_areas_df = rooms_areas_df.merge(postcodes, on='postcode')
+rooms_areas_df.head()
+
+# mates_areas_df['postcode'] = mates_areas_df.index.values
+# mates_areas_df = mates_areas_df.merge(postcodes, on='postcode')
+# mates_areas_df.head()
 
 
 # Let's plot the 'scattered' points on a map,
@@ -398,7 +409,7 @@ m2.postcodes_info
 df_poly = pd.DataFrame({
             'shapes': [Polygon(np.array(shape), True) for shape in m2.postcodes],
             'postcode': [area['name'] for area in m2.postcodes_info]})
-df_poly = df_poly.merge(mates_areas_df, on='postcode', how='left')
+df_poly = df_poly.merge(rooms_areas_df, on='postcode', how='left')
 df_poly = df_poly[~df_poly['count'].isin([np.NaN])]
 df_poly.head()
 
@@ -417,7 +428,7 @@ ax7.add_collection(pc)
 mapper = matplotlib.cm.ScalarMappable(norm=norm, cmap=cmap)
 mapper.set_array(df_poly['count'])
 plt.colorbar(mapper, shrink=0.4)
-plt.title('Room Demand as no of "room wanted" ads per postcode', fontsize=18)
+plt.title('Room Demand as No. ads per postcode', fontsize=18)
 
 fig7.set_tight_layout(True)
 

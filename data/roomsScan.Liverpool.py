@@ -4,7 +4,7 @@
 
 # pd.read_html() -> scrape html tables
 
-from bs4 import BeautifulSoup
+# from bs4 import BeautifulSoup
 import requests
 import json
 from datetime import datetime
@@ -79,8 +79,10 @@ people_looking['areas'] = dict()
 people_looking['listings'] = dict()
 
 # will hold all the rooms found
-rooms = {}
+rooms= dict()
 
+rooms_areas = dict()
+rooms_areas['areas'] = dict()
 
 # =============================================================================
 
@@ -95,10 +97,12 @@ def make_get_request(url=None, cookies=None, headers={'User-Agent': 'Mozilla/5.0
 #   METHODS TO EXTRACT DATA ABOUT ROOMS & SORT IT INTO A DICTIONARY
 # =============================================================================
 
-def search_rooms_in(area, rooms={}):
+def search_rooms_in(area):
     global preferences
     preferences['page'] = 1
     preferences['where'] = area.lower() # str.lower() makes it lowercase
+
+    rooms = {}
 
     params = '&'.join(['{key}={value}'.format(
             key=key, value=preferences[key]) for key in preferences])
@@ -108,7 +112,7 @@ def search_rooms_in(area, rooms={}):
     try:
         sparerooms_reqs = make_get_request(url=url, cookies=cookies, headers=headers)
         #print(sparerooms_reqs) # from this we realise that the text
-        #spat out by the above func. is really a json file, so...
+                #spat out by the above func. is really a json file, so...
         results = json.loads(sparerooms_reqs)
     except Exception as e:
         print('Error Getting {area}: {message} (skipping...)'.format(area=area, message=e.message))
@@ -119,24 +123,15 @@ def search_rooms_in(area, rooms={}):
     if int(results['count']) > 10000 : #if there are more than 10k results, there must be an error: exclude this area
         print(area, ' is not returning valid search results for Room Listings: IGNORED')
         return rooms
-
     pages = int(results['pages']) if 'pages' in results else 0
-    count = int(results['count']) if 'count' in results else 0
-
-    if not rooms: # if the dictionary is empty, initialise it
-        rooms['listings'] = {}
-        rooms['areas'] = { area : count }
-
-    rooms['areas'] = {**rooms['areas'], **{area: count } }
 
     for page in range(1, min(pages, max_pages)+1):
         preferences['page'] = page
-
-        # prepare url for page request and query the website
-        params = '&'.join(['{key}={value}'.format(
-            key=key, value=preferences[key]) for key in preferences])
+        params = '&'.join(
+                ['{key}={value}'.format(key=key, value=preferences[key]
+                ) for key in preferences])
         url = '{location}/{endpoint}?{params}'.format(
-            location=api_location, endpoint=api_search_endpoint, params=params)
+                location=api_location, endpoint=api_search_endpoint, params=params)
         sparerooms_reqs = make_get_request(url=url, cookies=cookies, headers=headers)
         results = json.loads(sparerooms_reqs)
         '''
@@ -164,10 +159,78 @@ def search_rooms_in(area, rooms={}):
                                  }
     return rooms
 
+def search_rooms_count(area, rooms_areas={}):
+    global preferences
+    preferences['page'] = 1
+    preferences['where'] = area.lower() # str.lower() makes it lowercase
+
+    params = '&'.join(['{key}={value}'.format(
+            key=key, value=preferences[key]) for key in preferences])
+    url = '{location}/{endpoint}?{parameters}'.format(
+            location=api_location, endpoint=api_search_endpoint, parameters=params)
+
+    try:
+        sparerooms_reqs = make_get_request(url=url, cookies=cookies, headers=headers)
+        #print(sparerooms_reqs) # from this we realise that the text
+        #spat out by the above func. is really a json file, so...
+        results = json.loads(sparerooms_reqs)
+    except Exception as e:
+        print('Error Getting {area}: {message} (skipping...)'.format(area=area, message=e.message))
+        return rooms_areas
+    if results['success'] == 0 :
+        print(area, ' is not a valid search area for Room Seekers: IGNORED')
+        return rooms_areas
+    if int(results['count']) > 10000 : #if there are more than 10k results, there must be an error: exclude this area
+        print(area, ' is not returning valid search results for Room Listings: IGNORED')
+        return rooms_areas
+
+    pages = int(results['pages']) if 'pages' in results else 0
+    count = int(results['count']) if 'count' in results else 0
+
+    if not rooms_areas: # if the dictionary is empty, initialise it
+        rooms_areas['areas'] = { area : count }
+
+    rooms_areas['areas'] = {**rooms_areas['areas'], **{area: count } }
+
+    for page in range(1, min(pages, max_pages)+1):
+        preferences['page'] = page
+
+        # prepare url for page request and query the website
+        params = '&'.join(['{key}={value}'.format(
+            key=key, value=preferences[key]) for key in preferences])
+        url = '{location}/{endpoint}?{params}'.format(
+            location=api_location, endpoint=api_search_endpoint, params=params)
+        sparerooms_reqs = make_get_request(url=url, cookies=cookies, headers=headers)
+        results = json.loads(sparerooms_reqs)
+        '''
+        # export raw spareroom page (json data)
+        with open('raw_spareroom.json', 'w') as f:
+            f.write(json.dumps(results, indent=2, sort_keys=True))
+        '''
+        for listing_data in results['results']: # iterate through listings
+            #print(room_data,'\n') # checkpoint
+            room_id = listing_data['advert_id']
+            if 'days_of_wk_available' in listing_data and \
+                listing_data['days_of_wk_available'] != '7 days a week':
+                    continue #only consider normal lets (7 days per week)
+            if 'ad_type' in listing_data and listing_data['ad_type'] != 'offered':
+                continue
+            rooms_no = len(listing_data['rooms_areas']) if 'rooms_areas' in listing_data else 0
+            for r in range(rooms_no):
+                room_info = filter_room_info(listing_data, r)
+                id_code = room_id + str(r).rjust(3, '0')
+                if id_code in rooms: # avoid duplicates
+                    continue
+                rooms_areas[id_code] = {
+                                    **{'ad_id':room_id, 'room_num_within_ad':r, 'search':area},
+                                    **room_info
+                                 }
+    return rooms_areas
+
 # =============================================================================
 
 def filter_room_info(room_details, room_number=0):
-    #exctract relevant details from a room and put it into a dictionary
+    # exctract relevant details from a room and put it into a dictionary
     latitude = room_details['latitude']
     longitude = room_details['longitude']
     postcode = room_details['postcode']
@@ -304,8 +367,12 @@ def get_combined_seekers(area, seekers={}):
 # file to store the rooms in
 file_name = 'rooms.Liverpool.json'
 
+# file to store the room count
+file_name2 = 'roomsCount.Liverpool.json'
+
 # file to store the people looking in
-file_name2 = 'flatmates.Liverpool.json'
+file_name3 = 'flatmates.Liverpool.json'
+
 
 def save_rooms(rooms):
     """Saves the found rooms in the defined file."""
@@ -319,6 +386,18 @@ def save_rooms(rooms):
     except (IOError, ValueError) as e:
         logging.error(e.strerror, extra={'function': 'save_rooms'})
 
+def save_room_count(rooms_areas):
+    """Saves the found rooms in the defined file."""
+    # save the rooms found in a json file
+    try:
+        with open(file_name2, 'w') as f:
+            f.write(json.dumps(rooms_areas, indent=2, sort_keys=True))
+
+    # catch exceptions in case it cannot create the file or something wrong
+    # with json.dumps
+    except (IOError, ValueError) as e:
+        logging.error(e.strerror, extra={'function': 'save_room_count'})
+
 
 def save_flatmates(people_looking):
     """Saves the found rooms in the defined file."""
@@ -326,13 +405,13 @@ def save_flatmates(people_looking):
     try:
         #'''
         # export raw spareroom page (json data)
-        with open(file_name2, 'w') as f:
+        with open(file_name3, 'w') as f:
             f.write(json.dumps(people_looking, indent=2, sort_keys=True))
         #'''
     # catch exceptions in case it cannot create the file or something wrong
     # with json.dumps
     except (IOError, ValueError) as e:
-        logging.error(e.strerror, extra={'function': 'save_rooms'})
+        logging.error(e.strerror, extra={'function': 'save_flatmates'})
 
 # =============================================================================
 
@@ -340,13 +419,15 @@ def save_flatmates(people_looking):
 # 1 - rooms in a given area and then save them to a json file
 # 2 - people looking for a room in the same area
 def get_rooms(areas):
-    global rooms
+    global rooms_areas
     global people_looking
+    global rooms
 
     for area in areas:
-        rooms = {**rooms, **search_rooms_in(area)} # merge dictionaries
-        print(rooms)
+        rooms_areas = {**rooms_areas, **search_rooms_count(area)} # merge dictionaries
+        print(rooms_areas)
         people_looking = get_combined_seekers(area, people_looking)
+        rooms = {**rooms, **search_rooms_in(area)}
         '''
         temp_dict1, temp_dict2 = get_combined_seekers(area)
         people_looking['listings'] = {**temp_dict1, **people_looking['listings']}
@@ -354,6 +435,7 @@ def get_rooms(areas):
         '''
     save_flatmates(people_looking)
     save_rooms(rooms)
+    save_room_count(rooms_areas)
 
 # =============================================================================
 
