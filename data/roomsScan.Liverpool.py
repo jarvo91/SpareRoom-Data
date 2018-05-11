@@ -1,4 +1,4 @@
-#!/usr/bin/env python3
+.json#!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 # Zoopla api key = u3639q6jdfu5q6p3qhe6qyk8
 
@@ -365,13 +365,13 @@ def get_combined_seekers(area, seekers={}):
 #   METHODS TO SAVE DATA EXTRACTED TO LOCAL JSON FILE
 
 # file to store the rooms in
-file_name = 'rooms.Liverpool.json'
+file_name = 'Liverpool.rooms.json'
 
 # file to store the room count
-file_name2 = 'roomsCount.Liverpool.json'
+file_name2 = 'Livepool.roomsCount.json'
 
 # file to store the people looking in
-file_name3 = 'flatmates.Liverpool.json'
+file_name3 = 'Liverpool.flatmates.json'
 
 
 def save_rooms(rooms):

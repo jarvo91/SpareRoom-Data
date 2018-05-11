@@ -13,9 +13,9 @@ import seaborn as sns
 print('Loading...')
 
 # reading the JSON data using json.load()
-file1 = 'data/flatmates.Derby.json'
-file2 = 'data/rooms.Derby.json'
-file3 = 'data/roomsCount.Derby.json'
+file1 = 'data/derby.flatmates.json'
+file2 = 'data/derby.rooms.json'
+file3 = 'data/derby.roomsCount.json'
 with open(file1) as flatmates_dict:
     flatmates_dict = json.load(flatmates_dict)
 with open(file2) as rooms_dict:

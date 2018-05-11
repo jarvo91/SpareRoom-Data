@@ -365,13 +365,13 @@ def get_combined_seekers(area, seekers={}):
 #   METHODS TO SAVE DATA EXTRACTED TO LOCAL JSON FILE
 
 # file to store the rooms in
-file_name = 'rooms.Derby.json'
+file_name = 'manchester.rooms.json'
 
 # file to store the room count
-file_name2 = 'roomsCount.Derby.json'
+file_name2 = 'manchester.roomsCount.json'
 
 # file to store the people looking in
-file_name3 = 'flatmates.Derby.json'
+file_name3 = 'manchester.flatmates.json'
 
 
 def save_rooms(rooms):
