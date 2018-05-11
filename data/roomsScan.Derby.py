@@ -439,13 +439,29 @@ def get_rooms(areas):
 
 # =============================================================================
 
-str_areas = 'DE1 DE2 DE3 DE4 DE5 DE6 DE7 DE11 DE12 DE13 DE14 DE15 DE21 DE22 DE23 DE24 DE45 DE55 DE56 DE65 DE72 DE73 DE74 DE75'
+str_areas = 'DE1 DE3 DE4 DE5 DE6 DE7 DE11 DE12 DE13 DE14 DE15 DE21 DE22 DE23 DE24 DE45 DE55 DE56 DE65 DE72 DE73 DE74 DE75'
 areas = str_areas.split()
 
     # Derby postcodes ->
                 #'''DE1 DE2 DE3 DE4 DE5 DE6 DE7 DE11 DE12 DE13 DE14 DE15 DE21
                 # DE22 DE23 DE24 DE45 DE55 DE56 DE65 DE72 DE73 DE74 DE75'''
-
-
-
+    # Nottingham postcodes ->
+                # 'NG1 NG2 NG3 NG4 NG5 NG6 NG7 NG8 NG9 NG10 NG11 NG12
+                # NG13 NG14 NG15 N16'
+    # Liverpool  postcodes ->
+                #'''L1 L2 L3 L4 L5 L6 L7 L8 L9 L10 L11 L12 L13 L14 L15 L16 L17 L18
+                #L19 L20 L21 L22 L23 L24 L25 L26 L27 L28 L29 L30 L31 L32 L33 L34 L35
+                #L36 L37 L38 L39 L40 L67 L68 L69 L70 L71 L72 L73 L74 L75 L80'''
+    # Wigan postcodes ->
+                # WN1 WN2 WN3 WN4 WN5 WN6 WN7 WN8'
+    # Bolton postcodes ->
+                # 'BL0 BL1 BL2 BL3 BL4 BL5 BL6 BL7 BL8 BL9'
+    # Stockport postcodes ->
+                # 'SK1 SK2 SK3 SK4 SK5 SK6 SK7 SK8 SK9 SK10 SK11 SK12 SK13
+                # SK13 SK14 SK15 SK16 SK17 SK22 SK23'
+    # Warrington postcodes ->
+                # 'WA1 WA2 WA3 WA4 WA5 WA6 WA7 WA8 WA9 WA10 WA11 WA12 WA13 WA14
+                # WA15 WA16 WA55 WA88'
+    # Rochdale postcodes ->
+                # OL1 OL2 OL5 OL6 OL8 OL10 OL11 OL12'
 get_rooms(areas) # main function()

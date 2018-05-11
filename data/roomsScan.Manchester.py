@@ -49,14 +49,14 @@ preferences = {
         'per': 'pcm',
         'page': 100,
         'max_per_page': 100, #max is 100
-        'where': 'Liverpool',
+        'where': 'Manchester',
         }
 
 buddies_preferences = {
         'format': 'json',
         'page': 100,
         'max_per_page': 100, #max is 100
-        'where': 'Liverpool',
+        'where': 'Manchester',
         }
 
 max_pages = 10 # max number of pages to parse per area
@@ -365,13 +365,13 @@ def get_combined_seekers(area, seekers={}):
 #   METHODS TO SAVE DATA EXTRACTED TO LOCAL JSON FILE
 
 # file to store the rooms in
-file_name = 'rooms.Liverpool.json'
+file_name = 'rooms.Derby.json'
 
 # file to store the room count
-file_name2 = 'roomsCount.Liverpool.json'
+file_name2 = 'roomsCount.Derby.json'
 
 # file to store the people looking in
-file_name3 = 'flatmates.Liverpool.json'
+file_name3 = 'flatmates.Derby.json'
 
 
 def save_rooms(rooms):
@@ -439,21 +439,23 @@ def get_rooms(areas):
 
 # =============================================================================
 
-str_areas = '''L1 L2 L3 L4 L5 L6 L7 L8 L9 L10 L11 L12 L13 L14 L15 L16 L17 L18
-L19 L20 L21 L22 L23 L24 L25 L26 L27 L28 L29 L30 L31 L32 L33 L34 L35 L36 L37 L38
-L39 L40'''
+str_areas = '''M1 M2 M3 M4 M5 M6 M7 M8 M9 M10 M11 M12 M13 M14 M15 M16 M17
+M18 M19 M20 M21 M22 M23 M24 M25 M26 M27 M28 M29 M30 M31 M32
+M33 M34 M35 M40 M41 M42 M43 M44 M45 M46 M50 M60 M90 M99'''
 areas = str_areas.split()
 
-    # Liverpool  postcodes ->
-                #'''L1 L2 L3 L4 L5 L6 L7 L8 L9 L10 L11 L12 L13 L14 L15 L16 L17 L18
-                #L19 L20 L21 L22 L23 L24 L25 L26 L27 L28 L29 L30 L31 L32 L33 L34 L35
-                #L36 L37 L38 L39 L40 L67 L68 L69 L70 L71 L72 L73 L74 L75 L80'''
     # Derby postcodes ->
                 #'''DE1 DE2 DE3 DE4 DE5 DE6 DE7 DE11 DE12 DE13 DE14 DE15 DE21
                 # DE22 DE23 DE24 DE45 DE55 DE56 DE65 DE72 DE73 DE74 DE75'''
     # Nottingham postcodes ->
                 # 'NG1 NG2 NG3 NG4 NG5 NG6 NG7 NG8 NG9 NG10 NG11 NG12
                 # NG13 NG14 NG15 N16'
+    # Liverpool  postcodes ->
+                #'''L1 L2 L3 L4 L5 L6 L7 L8 L9 L10 L11 L12 L13 L14 L15 L16 L17 L18
+                #L19 L20 L21 L22 L23 L24 L25 L26 L27 L28 L29 L30 L31 L32 L33 L34 L35
+                #L36 L37 L38 L39 L40 L67 L68 L69 L70 L71 L72 L73 L74 L75 L80'''
+    # Wigan postcodes ->
+                # WN1 WN2 WN3 WN4 WN5 WN6 WN7 WN8'
     # Bolton postcodes ->
                 # 'BL0 BL1 BL2 BL3 BL4 BL5 BL6 BL7 BL8 BL9'
     # Stockport postcodes ->
@@ -463,10 +465,9 @@ areas = str_areas.split()
                 # 'WA1 WA2 WA3 WA4 WA5 WA6 WA7 WA8 WA9 WA10 WA11 WA12 WA13 WA14
                 # WA15 WA16 WA55 WA88'
     # Rochdale postcodes ->
-                # OL1 OL2 OL5 OL6 OL8 OL10 OL11 OL12'
+                # 'OL1 OL2 OL5 OL6 OL8 OL10 OL11 OL12'
     # Manchester postcodes ->
                 # 'M1 M2 M3 M4 M5 M6 M7 M8 M9 M10 M11 M12 M13 M14 M15 M16 M17
                 # M18 M19 M20 M21 M22 M23 M24 M25 M26 M27 M28 M29 M30 M31 M32
                 # M33 M34 M35 M40 M41 M42 M43 M44 M45 M46 M50 M60 M90 M99'
-
 get_rooms(areas) # main function()
